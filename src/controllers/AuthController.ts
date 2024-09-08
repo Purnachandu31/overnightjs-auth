@@ -3,6 +3,9 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';  // Import bcrypt for hashing
 import * as jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import dotenv from 'dotenv';
+
+require('dotenv').config();
 
 @Controller('auth')
 export class AuthController {
@@ -55,7 +58,14 @@ private async login(req: Request, res: Response) {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const secret = process.env.JWT_SECRET;
+
+        if (!secret) {
+            throw new Error('JWT secret is not defined in environment variables');
+        }
+
+        const token = jwt.sign({ id: user._id }, secret, { expiresIn: '1h' });
+
         res.json({ token, username: user.username }); // Include username in response
     } catch (err) {
         console.error('Error in login:', err);
